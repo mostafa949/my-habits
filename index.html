@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>عاداتي | Habit Tracker</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="عاداتي">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* ===================== VARIABLES ===================== */
+        :root {
+            --bg1: #0f172a;
+            --bg2: #1e293b;
+            --card: rgba(30,41,59,0.85);
+            --accent: #10b981;
+            --accent2: #34d399;
+            --gold: #f59e0b;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --red: #ef4444;
+            --pink: #ec4899;
+            --cyan: #06b6d4;
+            --orange: #f97316;
+            --teal: #14b8a6;
+            --indigo: #6366f1;
+            --txt1: #f1f5f9;
+            --txt2: #94a3b8;
+            --txt3: #64748b;
+            --border: rgba(255,255,255,0.08);
+            --border2: rgba(255,255,255,0.15);
+            --rad: 20px;
+            --rad2: 12px;
+            --rad3: 8px;
+            --nav-h: 72px;
+            --head-h: 60px;
+            --font: 'Tajawal', sans-serif;
+        }
+
+        /* ===================== RESET ===================== */
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent}
+        body{font-family:var(--font);background:var(--bg1);color:var(--txt1);min-height:100vh;overflow-x:hidden}
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-thumb{background:var(--accent);border-radius:10px}
+
+        /* ===================== ANIMATED BG ===================== */
+        body::before{
+            content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;
+            background:radial-gradient(circle at 30% 20%,rgba(16,185,129,0.08) 0%,transparent 50%),
+                        radial-gradient(circle at 70% 80%,rgba(245,158,11,0.06) 0%,transparent 50%),
+                        radial-gradient(circle at 50% 50%,rgba(59,130,246,0.04) 0%,transparent 50%);
+            animation:bgFloat 20s ease-in-out infinite;z-index:0;pointer-events:none;
+        }
+        @keyframes bgFloat{
+            0%,100%{transform:translate(0,0) rotate(0deg)}
+            33%{transform:translate(2%,-2%) rotate(1deg)}
+            66%{transform:translate(-1%,1%) rotate(-1deg)}
+        }
+
+        /* ===================== HEADER ===================== */
+        .header{
+            position:fixed;top:0;left:0;right:0;height:var(--head-h);
+            background:rgba(15,23,42,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);display:flex;align-items:center;
+            justify-content:space-between;padding:0 20px;z-index:100;
+        }
+        .header-right{display:flex;align-items:center;gap:10px}
+        .logo{font-size:28px;animation:pulse 2s ease-in-out infinite}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+        .header h1{
+            font-size:20px;font-weight:800;
+            background:linear-gradient(135deg,var(--accent),var(--gold));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+        }
+        .header-date{font-size:12px;color:var(--txt2)}
+
+        /* ===================== CONTENT ===================== */
+        .content{position:relative;z-index:1;padding-top:calc(var(--head-h)+10px);padding-bottom:calc(var(--nav-h)+20px);min-height:100vh}
+        .page{display:none;padding:10px 16px 20px;animation:fadeIn .4s ease}
+        .page.active{display:block}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+        /* ===================== GREETING ===================== */
+        .greeting{text-align:center;padding:20px 0 10px}
+        .greeting-txt{font-size:24px;font-weight:300;color:var(--txt2);margin-bottom:4px}
+        .greeting-sub{font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+        /* ===================== PROGRESS RING ===================== */
+        .prog-wrap{display:flex;justify-content:center;padding:20px 0}
+        .prog-ring{position:relative;width:200px;height:200px}
+        .prog-ring svg{transform:rotate(-90deg);width:200px;height:200px}
+        .prog-ring .bg-c{fill:none;stroke:var(--border);stroke-width:8}
+        .prog-ring .fg-c{fill:none;stroke:url(#grad1);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)}
+        .prog-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+        .prog-pct{font-size:42px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+        .prog-lbl{font-size:13px;color:var(--txt2);margin-top:4px}
+
+        /* ===================== STATS ROW ===================== */
+        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}
+        .stat{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--rad2);padding:16px 10px;text-align:center;transition:.3s}
+        .stat:active{transform:scale(.95)}
+        .stat-icon{font-size:24px;margin-bottom:6px}
+        .stat-val{font-size:22px;font-weight:800}
+        .stat-lbl{font-size:11px;color:var(--txt2);margin-top:2px}
+
+        /* ===================== QUOTE ===================== */
+        .quote{
+            background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(245,158,11,0.1));
+            border:1px solid rgba(16,185,129,0.2);border-radius:var(--rad);
+            padding:20px;margin:15px 0;position:relative;overflow:hidden;
+        }
+        .quote::before{content:'❝';position:absolute;top:-10px;right:10px;font-size:60px;opacity:.1;color:var(--accent)}
+        .quote-txt{font-size:15px;line-height:1.8;font-weight:500}
+        .quote-src{font-size:12px;color:var(--accent);margin-top:10px;font-weight:700}
+
+        /* ===================== SECTION TITLE ===================== */
+        .sec-title{font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px}
+
+        /* ===================== HABIT CARDS ===================== */
+        .habits-list{display:flex;flex-direction:column;gap:12px}
+        .h-card{
+            background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--border);
+            border-radius:var(--rad);padding:18px;transition:.3s;position:relative;overflow:hidden;
+        }
+        .h-card:active{transform:scale(.98)}
+        .h-bar{position:absolute;top:0;right:0;width:4px;height:100%;border-radius:0 4px 4px 0}
+        .h-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+        .h-info{display:flex;align-items:center;gap:12px}
+        .h-emoji{font-size:32px;width:50px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:var(--rad2)}
+        .h-name{font-size:16px;font-weight:700}
+        .h-streak{font-size:12px;color:var(--txt2);display:flex;align-items:center;gap:4px;margin-top:2px}
+        .h-streak .fire{color:#ff6b35}
+        .h-badge{font-size:13px;font-weight:700;padding:6px 12px;border-radius:20px;min-width:55px;text-align:center}
+        .h-actions{display:flex;align-items:center;gap:4px}
+
+        /* Sub Items */
+        .h-subs{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+        .sub{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:var(--rad3);transition:.3s}
+        .sub:active{background:rgba(255,255,255,0.08)}
+        .sub-name{font-size:15px;font-weight:500}
+
+        /* Checkbox */
+        .chk{position:relative;width:28px;height:28px;cursor:pointer}
+        .chk input{display:none}
+        .chk-mark{
+            width:28px;height:28px;border-radius:50%;border:2px solid var(--txt3);
+            display:flex;align-items:center;justify-content:center;transition:.3s;font-size:14px;
+        }
+        .chk input:checked+.chk-mark{border-color:var(--accent);background:var(--accent);animation:chkBounce .4s cubic-bezier(.4,0,.2,1)}
+        .chk input:checked+.chk-mark::after{content:'✓';color:white;font-weight:700}
+        @keyframes chkBounce{0%{transform:scale(1)}30%{transform:scale(1.3)}60%{transform:scale(.9)}100%{transform:scale(1)}}
+
+        /* Toggle Button */
+        .h-toggle{
+            width:100%;padding:14px;border:2px dashed var(--border2);border-radius:var(--rad2);
+            background:transparent;color:var(--txt2);font-family:var(--font);font-size:15px;
+            font-weight:600;cursor:pointer;transition:.3s;margin-top:12px;
+            display:flex;align-items:center;justify-content:center;gap:8px;
+        }
+        .h-toggle.done{border-style:solid}
+        .h-toggle:active{transform:scale(.97)}
+
+        /* Delete Button */
+        .del-btn{background:none;border:none;color:var(--txt3);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:.3s}
+        .del-btn:active{color:var(--red);background:rgba(239,68,68,0.1)}
+
+        /* ===================== FAB ===================== */
+        .fab{
+            position:fixed;bottom:calc(var(--nav-h)+20px);left:20px;width:56px;height:56px;
+            border-radius:50%;background:linear-gradient(135deg,var(--accent),#059669);
+            color:white;border:none;font-size:28px;display:flex;align-items:center;justify-content:center;
+            cursor:pointer;box-shadow:0 4px 20px rgba(16,185,129,0.4);transition:.3s;z-index:50;
+        }
+        .fab:active{transform:scale(.9)}
+
+        /* ===================== MODAL ===================== */
+        .modal-bg{
+            position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);
+            z-index:200;display:none;align-items:flex-end;justify-content:center;
+        }
+        .modal-bg.open{display:flex}
+        .modal{
+            background:var(--bg2);border-radius:var(--rad) var(--rad) 0 0;width:100%;max-width:500px;
+            max-height:85vh;overflow-y:auto;padding:24px 20px 40px;animation:slideUp .4s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        .modal-handle{width:40px;height:4px;background:var(--txt3);border-radius:4px;margin:0 auto 20px}
+        .modal-title{font-size:22px;font-weight:800;margin-bottom:20px;text-align:center}
+
+        /* Form */
+        .fg{margin-bottom:18px}
+        .fl{font-size:14px;font-weight:600;color:var(--txt2);margin-bottom:8px;display:block}
+        .fi{
+            width:100%;padding:14px 16px;background:rgba(255,255,255,0.05);
+            border:1px solid var(--border);border-radius:var(--rad2);color:var(--txt1);
+            font-family:var(--font);font-size:16px;font-weight:500;transition:.3s;outline:none;
+        }
+        .fi:focus{border-color:var(--accent);background:rgba(16,185,129,0.05)}
+        .fi::placeholder{color:var(--txt3)}
+
+        /* Emoji Grid */
+        .emoji-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+        .emoji-opt{
+            width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+            font-size:24px;background:rgba(255,255,255,0.03);border:2px solid transparent;
+            border-radius:var(--rad3);cursor:pointer;transition:.3s;
+        }
+        .emoji-opt:active,.emoji-opt.sel{border-color:var(--accent);background:rgba(16,185,129,0.1);transform:scale(1.1)}
+
+        /* Color Grid */
+        .color-grid{display:flex;gap:10px;flex-wrap:wrap}
+        .color-opt{
+            width:38px;height:38px;border-radius:50%;border:3px solid transparent;
+            cursor:pointer;transition:.3s;position:relative;
+        }
+        .color-opt.sel{border-color:white;transform:scale(1.15)}
+        .color-opt.sel::after{content:'✓';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-weight:700;font-size:14px}
+
+        /* Suggestions */
+        .sug-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px}
+        .sug-btn{
+            display:flex;align-items:center;gap:8px;padding:12px;
+            background:rgba(255,255,255,0.03);border:1px solid var(--border);
+            border-radius:var(--rad3);color:var(--txt1);font-family:var(--font);
+            font-size:13px;font-weight:500;cursor:pointer;transition:.3s;
+        }
+        .sug-btn:active{background:rgba(16,185,129,0.1);border-color:var(--accent)}
+        .sug-btn .se{font-size:20px}
+
+        /* Submit */
+        .btn-main{
+            width:100%;padding:16px;background:linear-gradient(135deg,var(--accent),#059669);
+            border:none;border-radius:var(--rad2);color:white;font-family:var(--font);
+            font-size:17px;font-weight:700;cursor:pointer;transition:.3s;margin-top:10px;
+        }
+        .btn-main:active{transform:scale(.97);opacity:.9}
+        .btn-cancel{
+            width:100%;padding:16px;background:transparent;border:1px solid var(--border);
+            border-radius:var(--rad2);color:var(--txt2);font-family:var(--font);
+            font-size:17px;font-weight:700;cursor:pointer;margin-top:8px;
+        }
+
+        /* ===================== WEEK CALENDAR ===================== */
+        .week-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:15px 0}
+        .w-day{text-align:center;padding:10px 4px;border-radius:var(--rad3);background:var(--card);border:1px solid var(--border);transition:.3s}
+        .w-day.today{border-color:var(--accent);background:rgba(16,185,129,0.1)}
+        .w-day .dn{font-size:10px;color:var(--txt3);font-weight:600}
+        .w-day .dnum{font-size:16px;font-weight:700;margin:4px 0}
+        .w-dots{display:flex;justify-content:center;gap:3px;flex-wrap:wrap}
+        .dot{width:6px;height:6px;border-radius:50%;background:var(--txt3)}
+        .dot.done{background:var(--accent)}
+        .dot.half{background:var(--gold)}
+
+        /* Bar Chart */
+        .bars{display:flex;align-items:flex-end;justify-content:space-around;height:150px;padding:10px 0;margin:15px 0;border-bottom:1px solid var(--border)}
+        .bar-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+        .bar{width:28px;border-radius:6px 6px 0 0;background:linear-gradient(to top,var(--accent),var(--accent2));transition:height 1s cubic-bezier(.4,0,.2,1);min-height:4px}
+        .bar-lbl{font-size:10px;color:var(--txt3);font-weight:600}
+
+        /* Streak Cards */
+        .str-card{
+            background:var(--card);border:1px solid var(--border);border-radius:var(--rad2);
+            padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;
+        }
+        .str-info{display:flex;align-items:center;gap:10px}
+        .str-info .se{font-size:24px}
+        .str-info .sn{font-size:14px;font-weight:600}
+        .str-val{display:flex;align-items:center;gap:6px;font-size:18px;font-weight:800;color:var(--gold)}
+
+        /* ===================== SETTINGS ===================== */
+        .set-group{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);overflow:hidden;margin-bottom:16px}
+        .set-item{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:.3s}
+        .set-item:last-child{border-bottom:none}
+        .set-item:active{background:rgba(255,255,255,0.03)}
+        .set-left{display:flex;align-items:center;gap:12px}
+        .set-left .si{font-size:22px}
+        .set-left .st{font-size:15px;font-weight:500}
+        .set-val{font-size:13px;color:var(--txt2)}
+
+        /* Toggle */
+        .tog{position:relative;width:48px;height:26px}
+        .tog input{display:none}
+        .tog-s{position:absolute;inset:0;background:var(--txt3);border-radius:26px;cursor:pointer;transition:.3s}
+        .tog-s::before{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:white;top:3px;right:3px;transition:.3s}
+        .tog input:checked+.tog-s{background:var(--accent)}
+        .tog input:checked+.tog-s::before{transform:translateX(-22px)}
+
+        .danger{
+            width:100%;padding:14px;background:rgba(239,68,68,0.1);
+            border:1px solid rgba(239,68,68,0.3);border-radius:var(--rad2);
+            color:var(--red);font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;transition:.3s;
+        }
+        .danger:active{background:rgba(239,68,68,0.2)}
+
+        /* ===================== BOTTOM NAV ===================== */
+        .nav{
+            position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);
+            background:rgba(15,23,42,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+            border-top:1px solid var(--border);display:flex;align-items:center;
+            justify-content:space-around;z-index:100;padding-bottom:env(safe-area-inset-bottom,0);
+        }
+        .nav-i{
+            display:flex;flex-direction:column;align-items:center;gap:4px;
+            padding:8px 16px;cursor:pointer;transition:.3s;border-radius:var(--rad3);
+            position:relative;-webkit-tap-highlight-color:transparent;
+        }
+        .nav-i .ni{font-size:22px;transition:.3s}
+        .nav-i .nl{font-size:10px;font-weight:600;color:var(--txt3);transition:.3s}
+        .nav-i.on .ni{transform:scale(1.15)}
+        .nav-i.on .nl{color:var(--accent);font-weight:700}
+        .nav-i.on::before{content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:30px;height:3px;background:var(--accent);border-radius:0 0 4px 4px}
+
+        /* ===================== TOAST ===================== */
+        .toast{
+            position:fixed;top:calc(var(--head-h)+10px);left:50%;
+            transform:translateX(-50%) translateY(-100px);
+            background:var(--bg2);border:1px solid var(--accent);color:var(--txt1);
+            padding:14px 24px;border-radius:var(--rad2);font-family:var(--font);
+            font-size:14px;font-weight:600;z-index:250;
+            transition:transform .4s cubic-bezier(.4,0,.2,1);
+            box-shadow:0 8px 32px rgba(0,0,0,0.4);white-space:nowrap;
+        }
+        .toast.show{transform:translateX(-50%) translateY(0)}
+
+        /* ===================== CONFETTI ===================== */
+        .confetti-box{position:fixed;inset:0;pointer-events:none;z-index:300;overflow:hidden}
+        .conf{position:absolute;width:10px;height:10px;top:-10px;animation:confFall 3s linear forwards}
+        @keyframes confFall{0%{top:-10px;opacity:1;transform:rotate(0)}100%{top:110vh;opacity:0;transform:rotate(720deg)}}
+
+        /* Install Banner */
+        .inst-ban{
+            background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(245,158,11,0.15));
+            border:1px solid rgba(16,185,129,0.3);border-radius:var(--rad2);
+            padding:14px 16px;align-items:center;justify-content:space-between;
+            margin-bottom:12px;display:none;
+        }
+        .inst-ban.show{display:flex}
+        .inst-txt{font-size:13px;font-weight:600}
+        .inst-btn{padding:8px 16px;background:var(--accent);border:none;border-radius:20px;color:white;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+        .inst-x{background:none;border:none;color:var(--txt3);font-size:18px;cursor:pointer;padding:0 4px;margin-right:8px}
+
+        /* ===================== RESPONSIVE ===================== */
+        @media(min-width:500px){
+            .content{max-width:500px;margin:0 auto}
+            .nav{max-width:500px;left:50%;transform:translateX(-50%);border-radius:var(--rad) var(--rad) 0 0}
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+    <div class="header-right">
+        <span class="logo">🌙</span>
+        <h1>عاداتي</h1>
+    </div>
+    <span class="header-date" id="hDate"></span>
+</header>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Content -->
+<main class="content">
+
+    <!-- HOME -->
+    <div class="page active" id="p-home">
+        <div class="inst-ban" id="instBan">
+            <div style="display:flex;align-items:center;gap:8px">
+                <button class="inst-x" onclick="document.getElementById('instBan').classList.remove('show')">✕</button>
+                <span class="inst-txt">📲 حمّل التطبيق على جهازك</span>
+            </div>
+            <button class="inst-btn" onclick="installApp()">تحميل</button>
+        </div>
+
+        <div class="greeting">
+            <p class="greeting-txt" id="greetTxt"></p>
+            <p class="greeting-sub">كيف يومك؟ 💫</p>
+        </div>
+
+        <div class="prog-wrap">
+            <div class="prog-ring">
+                <svg viewBox="0 0 200 200">
+                    <defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#10b981"/>
+                        <stop offset="100%" style="stop-color:#f59e0b"/>
+                    </linearGradient></defs>
+                    <circle class="bg-c" cx="100" cy="100" r="85"/>
+                    <circle class="fg-c" id="progCircle" cx="100" cy="100" r="85" stroke-dasharray="534" stroke-dashoffset="534"/>
+                </svg>
+                <div class="prog-center">
+                    <div class="prog-pct" id="progPct">0%</div>
+                    <div class="prog-lbl">إنجاز اليوم</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="stat-icon">🔥</div><div class="stat-val" id="sBest">0</div><div class="stat-lbl">أفضل سلسلة</div></div>
+            <div class="stat"><div class="stat-icon">✅</div><div class="stat-val" id="sDone">0</div><div class="stat-lbl">مكتمل اليوم</div></div>
+            <div class="stat"><div class="stat-icon">🎯</div><div class="stat-val" id="sAll">0</div><div class="stat-lbl">إجمالي المهام</div></div>
+        </div>
+
+        <div class="quote">
+            <p class="quote-txt" id="qTxt"></p>
+            <p class="quote-src" id="qSrc"></p>
+        </div>
+
+        <h3 class="sec-title">⚡ نظرة سريعة</h3>
+        <div id="quickH" class="habits-list"></div>
+    </div>
+
+    <!-- HABITS -->
+    <div class="page" id="p-habits">
+        <h2 class="sec-title" style="font-size:22px;margin-top:5px">📋 عاداتي</h2>
+        <div id="habitsC" class="habits-list"></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="page" id="p-stats">
+        <h2 class="sec-title" style="font-size:22px;margin-top:5px">📊 الإحصائيات</h2>
+        <h3 class="sec-title">📅 هذا الأسبوع</h3>
+        <div class="week-cal" id="weekCal"></div>
+        <h3 class="sec-title">📈 الأداء الأسبوعي</h3>
+        <div class="bars" id="barChart"></div>
+        <h3 class="sec-title">🔥 السلاسل الحالية</h3>
+        <div id="strList"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="p-settings">
+        <h2 class="sec-title" style="font-size:22px;margin-top:5px">⚙️ الإعدادات</h2>
+        <div class="set-group">
+            <div class="set-item" onclick="togNotif()">
+                <div class="set-left"><span class="si">🔔</span><span class="st">التذكيرات</span></div>
+                <label class="tog"><input type="checkbox" id="notifTog"><span class="tog-s"></span></label>
+            </div>
+            <div class="set-item" onclick="exportD()">
+                <div class="set-left"><span class="si">📤</span><span class="st">تصدير البيانات</span></div>
+                <span class="set-val">JSON</span>
+            </div>
+            <div class="set-item" onclick="document.getElementById('impF').click()">
+                <div class="set-left"><span class="si">📥</span><span class="st">استيراد البيانات</span></div>
+                <span class="set-val">JSON</span>
+            </div>
+        </div>
+        <div class="set-group">
+            <div class="set-item"><div class="set-left"><span class="si">📱</span><span class="st">الإصدار</span></div><span class="set-val">1.0.0</span></div>
+            <div class="set-item"><div class="set-left"><span class="si">💚</span><span class="st">صنع بحب</span></div><span class="set-val">🌙</span></div>
+        </div>
+        <button class="danger" onclick="resetAll()" style="margin-top:10px">🗑️ مسح جميع البيانات</button>
+        <input type="file" id="impF" accept=".json" style="display:none" onchange="importD(event)">
+    </div>
+</main>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openModal()" style="display:none">+</button>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <h2 class="modal-title">✨ إضافة عادة جديدة</h2>
+        <div class="fg">
+            <label class="fl">💡 اقتراحات سريعة</label>
+            <div class="sug-grid">
+                <button class="sug-btn" onclick="sug('📖','قراءة القرآن','#3b82f6')"><span class="se">📖</span>قراءة القرآن</button>
+                <button class="sug-btn" onclick="sug('🤲','أذكار الصباح والمساء','#8b5cf6')"><span class="se">🤲</span>الأذكار</button>
+                <button class="sug-btn" onclick="sug('🏃','الرياضة','#ef4444')"><span class="se">🏃</span>الرياضة</button>
+                <button class="sug-btn" onclick="sug('💧','شرب الماء','#06b6d4')"><span class="se">💧</span>شرب الماء</button>
+                <button class="sug-btn" onclick="sug('📚','القراءة','#f59e0b')"><span class="se">📚</span>القراءة</button>
+                <button class="sug-btn" onclick="sug('😴','النوم المبكر','#6366f1')"><span class="se">😴</span>النوم المبكر</button>
+                <button class="sug-btn" onclick="sug('🙏','صلاة السنن','#14b8a6')"><span class="se">🙏</span>صلاة السنن</button>
+                <button class="sug-btn" onclick="sug('💰','الصدقة','#f97316')"><span class="se">💰</span>الصدقة</button>
+            </div>
+        </div>
+        <div class="fg"><label class="fl">📝 اسم العادة</label><input type="text" class="fi" id="hNameI" placeholder="مثال: قراءة القرآن" maxlength="30"></div>
+        <div class="fg"><label class="fl">😊 اختر أيقونة</label><div class="emoji-grid" id="emoG"></div></div>
+        <div class="fg"><label class="fl">🎨 اختر لون</label><div class="color-grid" id="colG"></div></div>
+        <button class="btn-main" onclick="addHabit()">➕ إضافة العادة</button>
+        <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
+    </div>
+</div>
+
+<!-- Confetti -->
+<div class="confetti-box" id="confBox"></div>
+
+<!-- Nav -->
+<nav class="nav">
+    <div class="nav-i on" onclick="go('home',this)"><span class="ni">🏠</span><span class="nl">الرئيسية</span></div>
+    <div class="nav-i" onclick="go('habits',this)"><span class="ni">✅</span><span class="nl">العادات</span></div>
+    <div class="nav-i" onclick="go('stats',this)"><span class="ni">📊</span><span class="nl">الإحصائيات</span></div>
+    <div class="nav-i" onclick="go('settings',this)"><span class="ni">⚙️</span><span class="nl">الإعدادات</span></div>
+</nav>
+
+<script>
+// ============================================
+// CONSTANTS & STATE
+// ============================================
+const SK='habitData';
+const SDAYS=['أحد','إثن','ثلا','أرب','خمي','جمع','سبت'];
+const EMOJIS=['📖','🤲','🏃','💧','📚','😴','🙏','💰','🎯','💪','🧘','🥗','✍️','🌅','🌙','🕌','⭐','💎'];
+const COLORS=['#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316','#14b8a6','#6366f1'];
+const QUOTES=[
+    {t:'إِنَّ مَعَ الْعُسْرِ يُسْرًا',s:'سورة الشرح'},
+    {t:'وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا',s:'سورة الطلاق'},
+    {t:'فَاذْكُرُونِي أَذْكُرْكُمْ',s:'سورة البقرة'},
+    {t:'وَقُل رَّبِّ زِدْنِي عِلْمًا',s:'سورة طه'},
+    {t:'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ',s:'سورة الرعد'},
+    {t:'وَلَا تَيْأَسُوا مِن رَّوْحِ اللَّهِ',s:'سورة يوسف'},
+    {t:'أحب الأعمال إلى الله أدومها وإن قل',s:'حديث نبوي شريف'},
+    {t:'خيركم من تعلم القرآن وعلمه',s:'حديث نبوي شريف'},
+    {t:'إنما الأعمال بالنيات',s:'حديث نبوي شريف'},
+    {t:'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً',s:'سورة البقرة'},
+];
+const DEF_HABITS=[
+    {id:'prayer',name:'الصلوات المفروضة',emoji:'🕌',color:'#10b981',type:'multi',
+     subItems:[{id:'fajr',name:'الفجر'},{id:'dhuhr',name:'الظهر'},{id:'asr',name:'العصر'},{id:'maghrib',name:'المغرب'},{id:'isha',name:'العشاء'}],
+     deletable:false},
+    {id:'avoid-haram',name:'الابتعاد عن الحرام',emoji:'🛡️',color:'#f59e0b',type:'boolean',deletable:false}
+];
+
+let D={habits:[],history:{},settings:{notifications:false}};
+let selEmoji='📖',selColor='#10b981',deferP=null;
+
+// ============================================
+// INIT
+// ============================================
+document.addEventListener('DOMContentLoaded',()=>{load();initUI();regSW()});
+
+// Load data
+function load(){
+    const s=localStorage.getItem(SK);
+    if(s){try{D=JSON.parse(s);DEF_HABITS.forEach(d=>{if(!D.habits.find(h=>h.id===d.id))D.habits.unshift(d)});}catch(e){D.habits=[...DEF_HABITS];D.history={};}}
+    else{D.habits=[...DEF_HABITS];D.history={};}
+    if(!D.settings)D.settings={notifications:false};
+    save();
+}
+function save(){localStorage.setItem(SK,JSON.stringify(D))}
+
+// Init UI
+function initUI(){
+    // Date
+    const now=new Date();
+    document.getElementById('hDate').textContent=now.toLocaleDateString('ar-EG',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    // Greeting
+    const h=now.getHours();
+    document.getElementById('greetTxt').textContent=h<5?'ليلة سعيدة 🌙':h<12?'صباح الخير ☀️':h<17?'مساء الخير 🌤️':'مساء النور 🌙';
+    // Quote
+    const doy=Math.floor((now-new Date(now.getFullYear(),0,0))/(864e5));
+    const q=QUOTES[doy%QUOTES.length];
+    document.getElementById('qTxt').textContent=`﴿ ${q.t} ﴾`;
+    document.getElementById('qSrc').textContent=`— ${q.s}`;
+    // Build pickers
+    buildEmoji();buildColor();
+    // Render
+    renderAll();
+    document.getElementById('notifTog').checked=D.settings.notifications;
+}
+
+// ============================================
+// DATE HELPERS
+// ============================================
+function today(){return fmtD(new Date())}
+function fmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+// ============================================
+// RENDER ALL
+// ============================================
+function renderAll(){renderHome();renderHabits();renderStats()}
+
+// Render home page
+function renderHome(){
+    const td=today(),dd=D.history[td]||{};
+    let tot=0,done=0;
+    D.habits.forEach(h=>{
+        if(h.type==='multi'){tot+=h.subItems.length;const s=dd[h.id]||{};done+=h.subItems.filter(x=>s[x.id]).length;}
+        else{tot++;if(dd[h.id])done++;}
+    });
+    const pct=tot?Math.round(done/tot*100):0;
+    // Progress ring
+    const circ=2*Math.PI*85;
+    document.getElementById('progCircle').style.strokeDashoffset=circ-(pct/100)*circ;
+    document.getElementById('progPct').textContent=pct+'%';
+    // Stats
+    document.getElementById('sDone').textContent=done;
+    document.getElementById('sAll').textContent=tot;
+    document.getElementById('sBest').textContent=bestStreak();
+    // Quick habits
+    const qc=document.getElementById('quickH');qc.innerHTML='';
+    D.habits.forEach(h=>{
+        let c=0,t=0,pt='';
+        if(h.type==='multi'){t=h.subItems.length;const s=dd[h.id]||{};c=h.subItems.filter(x=>s[x.id]).length;pt=c+'/'+t;}
+        else{t=1;c=dd[h.id]?1:0;pt=c?'✓':'—';}
+        const p=t?Math.round(c/t*100):0;
+        const bg=p===100?h.color:'rgba(255,255,255,0.08)';
+        const tc=p===100?'#fff':'var(--txt2)';
+        qc.innerHTML+=`<div class="h-card" style="padding:14px 16px;cursor:pointer" onclick="go('habits',document.querySelectorAll('.nav-i')[1])">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">${h.emoji}</span><span style="font-size:14px;font-weight:600">${h.name}</span></div>
+                <span class="h-badge" style="background:${bg};color:${tc};border:1px solid ${h.color}30">${pt}</span>
+            </div></div>`;
+    });
+}
+
+// Render habits page
+function renderHabits(){
+    const c=document.getElementById('habitsC'),td=today(),dd=D.history[td]||{};c.innerHTML='';
+    D.habits.forEach(h=>{
+        const str=calcStreak(h.id);
+        const del=h.deletable!==false?`<button class="del-btn" onclick="delHabit('${h.id}',event)">🗑️</button>`:'';
+        if(h.type==='multi'){
+            const sub=dd[h.id]||{},comp=h.subItems.filter(s=>sub[s.id]).length,tot=h.subItems.length;
+            const p=Math.round(comp/tot*100),bg=p===100?h.color:'rgba(255,255,255,0.08)',tc=p===100?'#fff':'var(--txt2)';
+            let si=h.subItems.map(s=>`<div class="sub"><span class="sub-name">${s.name}</span>
+                <label class="chk"><input type="checkbox" ${sub[s.id]?'checked':''} onchange="togSub('${h.id}','${s.id}',this.checked)">
+                <span class="chk-mark" style="${sub[s.id]?`background:${h.color};border-color:${h.color}`:''}" ></span></label></div>`).join('');
+            c.innerHTML+=`<div class="h-card"><div class="h-bar" style="background:${h.color}"></div>
+                <div class="h-head"><div class="h-info"><div class="h-emoji" style="background:${h.color}20">${h.emoji}</div>
+                <div><div class="h-name">${h.name}</div><div class="h-streak">${str>0?`<span class="fire">🔥</span> ${str} يوم`:'ابدأ سلسلتك!'}</div></div></div>
+                <div class="h-actions">${del}<span class="h-badge" style="background:${bg};color:${tc};border:1px solid ${h.color}30">${comp}/${tot}</span></div></div>
+                <div class="h-subs">${si}</div></div>`;
+        }else{
+            const done=dd[h.id]||false;
+            c.innerHTML+=`<div class="h-card"><div class="h-bar" style="background:${h.color}"></div>
+                <div class="h-head"><div class="h-info"><div class="h-emoji" style="background:${h.color}20">${h.emoji}</div>
+                <div><div class="h-name">${h.name}</div><div class="h-streak">${str>0?`<span class="fire">🔥</span> ${str} يوم`:'ابدأ سلسلتك!'}</div></div></div>
+                <div class="h-actions">${del}</div></div>
+                <button class="h-toggle ${done?'done':''}" onclick="togBool('${h.id}')" style="${done?`border-color:${h.color};color:${h.color};background:${h.color}15`:''}">${done?'✅ تم بحمد الله':'⬜ اضغط للتأكيد'}</button></div>`;
+        }
+    });
+}
+
+// Render stats page
+function renderStats(){
+    // Week calendar
+    const wc=document.getElementById('weekCal');wc.innerHTML='';
+    const t=new Date(),sw=new Date(t);sw.setDate(t.getDate()-t.getDay());
+    for(let i=0;i<7;i++){
+        const d=new Date(sw);d.setDate(sw.getDate()+i);const ds=fmtD(d),isT=ds===today(),dd=D.history[ds]||{};
+        let dots='';D.habits.forEach(h=>{const c=habitComp(h,dd);dots+=`<div class="dot ${c>=1?'done':c>0?'half':''}"></div>`;});
+        wc.innerHTML+=`<div class="w-day ${isT?'today':''}"><div class="dn">${SDAYS[i]}</div><div class="dnum">${d.getDate()}</div><div class="w-dots">${dots}</div></div>`;
+    }
+    // Bar chart
+    const bc=document.getElementById('barChart');bc.innerHTML='';
+    for(let i=6;i>=0;i--){
+        const d=new Date(t);d.setDate(t.getDate()-i);const ds=fmtD(d),p=dayTotal(ds),h=Math.max(4,p*130/100);
+        bc.innerHTML+=`<div class="bar-item"><div class="bar" style="height:${h}px;${p===100?'background:linear-gradient(to top,#f59e0b,#fbbf24)':''}"></div><span class="bar-lbl">${SDAYS[d.getDay()]}</span></div>`;
+    }
+    // Streaks
+    const sl=document.getElementById('strList');sl.innerHTML='';
+    D.habits.forEach(h=>{const s=calcStreak(h.id);
+        sl.innerHTML+=`<div class="str-card"><div class="str-info"><span class="se">${h.emoji}</span><span class="sn">${h.name}</span></div><div class="str-val">${s>0?'🔥':'💤'}<span>${s}</span></div></div>`;
+    });
+}
+
+// ============================================
+// DATA LOGIC
+// ============================================
+function togSub(hid,sid,v){const td=today();if(!D.history[td])D.history[td]={};if(!D.history[td][hid])D.history[td][hid]={};D.history[td][hid][sid]=v;save();renderAll();vib(30);chkDone()}
+function togBool(hid){const td=today();if(!D.history[td])D.history[td]={};D.history[td][hid]=!D.history[td][hid];save();renderAll();vib(30);chkDone()}
+function habitComp(h,dd){if(h.type==='multi'){const s=dd[h.id]||{},c=h.subItems.filter(x=>s[x.id]).length;return h.subItems.length?c/h.subItems.length:0;}return dd[h.id]?1:0;}
+function dayTotal(ds){const dd=D.history[ds]||{};let t=0,c=0;D.habits.forEach(h=>{if(h.type==='multi'){t+=h.subItems.length;const s=dd[h.id]||{};c+=h.subItems.filter(x=>s[x.id]).length;}else{t++;if(dd[h.id])c++;}});return t?Math.round(c/t*100):0;}
+function calcStreak(hid){let s=0;const h=D.habits.find(x=>x.id===hid);if(!h)return 0;const d=new Date();let first=true;
+    while(true){const ds=fmtD(d),dd=D.history[ds]||{};if(habitComp(h,dd)>=1){s++;d.setDate(d.getDate()-1);first=false;}else{if(first&&ds===today()){d.setDate(d.getDate()-1);first=false;continue;}break;}}return s;}
+function bestStreak(){let b=0;D.habits.forEach(h=>{const s=calcStreak(h.id);if(s>b)b=s;});return b;}
+function chkDone(){if(dayTotal(today())===100){confetti();toast('🎉 ما شاء الله! أكملت جميع عاداتك اليوم');}}
+
+// ============================================
+// HABIT MANAGEMENT
+// ============================================
+function addHabit(){
+    const n=document.getElementById('hNameI').value.trim();
+    if(!n)return toast('⚠️ أدخل اسم العادة');
+    if(D.habits.find(h=>h.name===n))return toast('⚠️ العادة موجودة');
+    D.habits.push({id:'h_'+Date.now(),name:n,emoji:selEmoji,color:selColor,type:'boolean',deletable:true});
+    save();renderAll();closeModal();toast('✅ تمت الإضافة');vib(50);
+}
+function delHabit(id,e){e.stopPropagation();if(confirm('حذف هذه العادة؟')){D.habits=D.habits.filter(h=>h.id!==id);Object.keys(D.history).forEach(d=>{delete D.history[d][id]});save();renderAll();toast('🗑️ تم الحذف');}}
+function sug(e,n,c){document.getElementById('hNameI').value=n;selEmoji=e;selColor=c;
+    document.querySelectorAll('.emoji-opt').forEach(el=>el.classList.toggle('sel',el.textContent.trim()===e));
+    document.querySelectorAll('.color-opt').forEach(el=>el.classList.toggle('sel',el.dataset.c===c));vib(20);}
+
+// ============================================
+// MODAL & UI
+// ============================================
+function openModal(){document.getElementById('modal').classList.add('open');document.getElementById('hNameI').value='';selEmoji='📖';selColor='#10b981';buildEmoji();buildColor();}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+function buildEmoji(){const g=document.getElementById('emoG');g.innerHTML='';EMOJIS.forEach(e=>{const d=document.createElement('div');d.className=`emoji-opt ${e===selEmoji?'sel':''}`;d.textContent=e;d.onclick=()=>{selEmoji=e;document.querySelectorAll('.emoji-opt').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');vib(15)};g.appendChild(d)})}
+function buildColor(){const g=document.getElementById('colG');g.innerHTML='';COLORS.forEach(c=>{const d=document.createElement('div');d.className=`color-opt ${c===selColor?'sel':''}`;d.style.background=c;d.dataset.c=c;d.onclick=()=>{selColor=c;document.querySelectorAll('.color-opt').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');vib(15)};g.appendChild(d)})}
+
+function go(p,ni){
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    document.getElementById('p-'+p).classList.add('active');
+    document.querySelectorAll('.nav-i').forEach(x=>x.classList.remove('on'));
+    if(ni)ni.classList.add('on');
+    document.getElementById('fab').style.display=p==='habits'?'flex':'none';
+    if(p==='stats')renderStats();if(p==='home')renderHome();vib(10);
+}
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+function vib(ms){if(navigator.vibrate)navigator.vibrate(ms)}
+
+function confetti(){
+    const c=document.getElementById('confBox');c.innerHTML='';
+    const cols=['#10b981','#f59e0b','#3b82f6','#ef4444','#8b5cf6','#ec4899','#fbbf24'];
+    for(let i=0;i<50;i++){const p=document.createElement('div');p.className='conf';p.style.left=Math.random()*100+'%';p.style.animationDelay=Math.random()*2+'s';p.style.animationDuration=(Math.random()*2+2)+'s';p.style.background=cols[Math.floor(Math.random()*cols.length)];p.style.borderRadius=Math.random()>.5?'50%':'2px';p.style.width=(Math.random()*8+4)+'px';p.style.height=(Math.random()*8+4)+'px';c.appendChild(p);}
+    setTimeout(()=>c.innerHTML='',5000);
+}
+
+// ============================================
+// SETTINGS
+// ============================================
+function togNotif(){const t=document.getElementById('notifTog');t.checked=!t.checked;D.settings.notifications=t.checked;save();
+    if(t.checked&&'Notification'in window){Notification.requestPermission().then(p=>{if(p!=='granted'){t.checked=false;D.settings.notifications=false;save();toast('⚠️ لم يتم السماح');}else toast('🔔 تم التفعيل')});}else toast(t.checked?'🔔 تم التفعيل':'🔕 تم الإيقاف');}
+function exportD(){const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`habits_${today()}.json`;a.click();toast('📤 تم التصدير')}
+function importD(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.habits&&d.history){D=d;save();renderAll();toast('📥 تم الاستيراد');}else toast('⚠️ ملف غير صالح');}catch(x){toast('⚠️ خطأ')}};r.readAsText(f);e.target.value='';}
+function resetAll(){if(confirm('⚠️ حذف جميع البيانات؟')){if(confirm('تأكيد أخير؟')){localStorage.removeItem(SK);D={habits:[...DEF_HABITS],history:{},settings:{notifications:false}};save();renderAll();toast('🗑️ تم المسح')}}}
+
+// ============================================
+// PWA
+// ============================================
+function regSW(){if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').then(r=>console.log('SW:',r.scope)).catch(e=>console.log('SW fail:',e))}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferP=e;document.getElementById('instBan').classList.add('show')});
+function installApp(){if(deferP){deferP.prompt();deferP.userChoice.then(c=>{if(c.outcome==='accepted')toast('🎉 تم التثبيت!');deferP=null;document.getElementById('instBan').classList.remove('show')})}}
+
+// Close modal on overlay click
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
+</script>
+</body>
+</html>
